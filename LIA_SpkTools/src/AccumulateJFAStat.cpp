@@ -101,11 +101,15 @@ JFAAcc::JFAAcc(String & featFilename,Config & config)
 		else{
 
 			if(verboseLevel >1)cout<<"Init JFAAcc with only one file"<<endl;
+			/* hack per a evitar memory leaks
 			XLine& tmpLine = XLine::create();
 			tmpLine.addElement(featFilename);
 
 			//XList jfaNdx;
 			jfaNdx.addLine()=tmpLine;
+			*/
+			XLine &tmpLine = jfaNdx.addLine();
+			tmpLine.addElement(featFilename);
 		}
 		_init(jfaNdx,config);
 }
@@ -125,11 +129,15 @@ JFAAcc::JFAAcc(String & featFilename,Config & config, String task)
 		else{
 
 			if(verboseLevel >1)cout<<"Init JFAAcc with only one file"<<endl;
+			/* HACK per a EVITAR MEMORY LEAKS
 			XLine& tmpLine = XLine::create();
 			tmpLine.addElement(featFilename);
 
 			//XList jfaNdx;
-			jfaNdx.addLine()=tmpLine;
+			jfaNdx.addLine()=tmpLine;*/
+
+			XLine &tmpLine = jfaNdx.addLine();
+			tmpLine.addElement(featFilename);
 		}
 		_init(jfaNdx,config,task);
 }
@@ -503,6 +511,7 @@ void JFAAcc::computeAndAccumulateJFAStat(Config& config){
 	#ifdef THREAD          
 	if (config.existsParam("numThread") && config.getParam("numThread").toULong() >0){
 		unsigned long numThread = config.getParam("numThread").toULong();
+		//cout << "multithread: using " << numThread;
 		computeAndAccumulateJFAStatThreaded(numThread, config);				//accumulate stats
 	}
 	else	computeAndAccumulateJFAStatUnThreaded(config); 			//unthreaded version
@@ -575,6 +584,8 @@ void JFAAcc::computeAndAccumulateJFAStatUnThreaded(Config& config){
 			}
 		}
 	}
+	//20160112
+	_ss.deleteMixtureStat(acc);
 }
 
 #ifdef THREAD
@@ -682,7 +693,8 @@ void *Statthread(void *threadarg) {
 			}
 		}
 	}
-
+	//20160112
+	_ss.deleteMixtureStat(acc);
 	pthread_exit((void*) 0);
 	return (void*)0 ;
 }
@@ -824,6 +836,8 @@ void JFAAcc::computeAndAccumulateJFAStat(SegCluster &selectedSegments,FeatureSer
 			}
 		}
 	}	
+	//20160112
+	_ss.deleteMixtureStat(acc);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------

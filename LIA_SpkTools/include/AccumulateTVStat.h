@@ -342,6 +342,11 @@ class LIA_SPKTOOLS_API TVAcc{
 		///
 		void saveT(const String& file, Config& config);
 	
+		/// Save speakermodel M = ubm + Ty to a gmm file
+		/// @param config config filename
+		///
+		void saveWbyFileExplicit(Config &config, XList inputClientList);
+
 		/// Compute the VEVt matrices
 		/// @param config config filename
 		///

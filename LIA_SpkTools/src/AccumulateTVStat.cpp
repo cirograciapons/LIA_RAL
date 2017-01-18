@@ -98,9 +98,14 @@ TVAcc::TVAcc(String & featFilename,Config & config)
 	}
 	else{
 		if(verboseLevel >1)cout<<"Init TVAcc with only one file"<<endl;
+		/* hack per a evitar memory leaks
 		XLine& tmpLine = XLine::create();
 		tmpLine.addElement(featFilename);
 		TVNdx.addLine()=tmpLine;
+		*/
+
+		XLine &tmpLine = TVNdx.addLine();
+		tmpLine.addElement(featFilename);
 	}
 	_init(TVNdx,config);
 }
@@ -347,7 +352,9 @@ void TVAcc::computeAndAccumulateTVStatUnThreaded(Config& config){
 				}
 			}
 		}
-	}	
+	}
+	//20160112
+	_ss.deleteMixtureStat(acc);
 }
 
 
@@ -470,6 +477,8 @@ void *StatTVthread(void *threadarg) {
 			}
 		}
 	}
+	//20160112
+	_ss.deleteMixtureStat(acc);
 	pthread_exit((void*) 0);
 	return (void*)0 ;
 }
@@ -607,6 +616,8 @@ void TVAcc::computeAndAccumulateTVStat(SegCluster &selectedSegments,FeatureServe
 			}
 		}
 	}	
+	//20160112
+	_ss.deleteMixtureStat(acc);
 }
 
 //-----------------------------------------------------------------------------------------
@@ -2776,25 +2787,31 @@ void TVAcc::estimateWEigenDecompositionThreaded(Matrix<double> &D, Matrix<double
 	if (verboseLevel >= 1) cout << "(AccumulateTVStat) Done " << endl;
 }
 #endif
+void TVAcc::saveWbyFileExplicit(Config &config, XList inputClientList)
+{
+	MixtureServer ms(config);
+	String svPath=config.getParam("saveVectorFilesPath");
+	String yExtension = ".y";
+	if(config.existsParam("vectorFilesExtension"))	yExtension = config.getParam("vectorFilesExtension");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	XLine * linep;
+	unsigned long session = 0;
+	while ((linep=inputClientList.getLine()) != NULL){             	// linep gives the XLine with the Id of a given client and the list of files
+		String id=linep->getElement(0); 
+		String yFile=svPath+id+yExtension;
+		
+		Matrix<double> sessionY;
+		sessionY.setDimensions(1,_rankT);
+		for(unsigned long i=0;i<_rankT;i++){
+			sessionY(0,i) = _W(session,i);
+		}
+		MixtureGD & clientMixture = ms.createMixtureGD();
+		getSpeakerModel(clientMixture,id);
+		clientMixture.save(id, config);
+		sessionY.save(yFile,config);
+		session++;
+	}
+}
 //-----------------------------------------------------------------------------------------
 void TVAcc::saveWbyFile(Config &config){
 	

@@ -52,6 +52,9 @@ LIA_RAL admin [alize@univ-avignon.fr]
 Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 */
 
+#if !defined(ALIZE_ClusteringCriterion_h)
+#define ALIZE_ClusteringCriterion_h
+
 #if defined(_WIN32)
 #if defined(LIA_SPKTOOLS_EXPORTS)
 #define LIA_SPKTOOLS_API __declspec(dllexport)
@@ -67,7 +70,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #include<cstdio>
 #include<cassert>
 #include<cmath>
-#include "TrainTools.h"
+#include <TrainTools.h>
 
 using namespace alize;
 using namespace std;
@@ -76,7 +79,7 @@ using namespace std;
 /**********************************************************
 * mergeCluster: merge two clusters
 ***********************************************************/
-LIA_SPKTOOLS_API SegCluster& mergeCluster(SegCluster& c1, SegCluster& c2, SegServer& segTemp,String merge="NULL");
+LIA_SPKTOOLS_API SegCluster& mergeCluster(SegCluster& c1, SegCluster& c2, SegServer& segTemp,String merge);
 
 
 /**********************************************************
@@ -142,7 +145,7 @@ LIA_SPKTOOLS_API Seg *bestFittingSegment(Config& config, SegCluster& cluster, Mi
 /**********************************************************
 * bestFittingCLuster: search the best cluster for a segment (in terms of normalized likelihood) and return it
 ***********************************************************/
-LIA_SPKTOOLS_API unsigned long bestFittingCluster(Config& config, hmm& actualHMM, SegServer& actualSeg, Seg *segment, StatServer& ss, FeatureServer& fs, unsigned long exceptInd=200);
+LIA_SPKTOOLS_API unsigned long bestFittingCluster(Config& config, hmm& actualHMM, SegServer& actualSeg, Seg *segment, StatServer& ss, FeatureServer& fs, unsigned long exceptInd);
 
 /**********************************************************
 * intraCluster: evaluate purity intra cluster
@@ -158,3 +161,5 @@ LIA_SPKTOOLS_API void interCluster(Config& config, hmm& actualHMM, SegServer& ac
  * clusteringCriterionWithoutWorldInit: Application of different criterion for clustering (models are trained by EM/ML - Initialization by external model)
  ***********************************************************/
 LIA_SPKTOOLS_API double clusteringCriterionWithoutWorldInitOneGaus(Config& config, SegCluster& c1, SegCluster& c2, StatServer& ss, FeatureServer& fs,String crit);
+
+#endif
