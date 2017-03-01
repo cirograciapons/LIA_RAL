@@ -67,7 +67,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #include <pthread.h>
 #endif
 
-using namespace alize;
+using namespace asv;
 using namespace std;
 
 FactorAnalysisStat::FactorAnalysisStat(String & featFilename,FeatureServer & fs,Config & config):_ms(config),_ss(config){ // constructor for a single file

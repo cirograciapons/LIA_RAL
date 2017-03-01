@@ -62,6 +62,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 //Error	39	error C4996 : 'fopen' : This function or variable may be unsafe.Consider using fopen_s instead.To disable deprecation, use _CRT_SECURE_NO_WARNINGS.See online help for details.d : \asv_system\bin\modificat_amb_dtwaccum\lia_ral\lia_spktools\src\tools.cpp	679	AcousticSegmentation
 
 #include "Tools.h"
+#include <kryptlib.h>
 
 
 /*************************************************************
@@ -679,6 +680,11 @@ void saveSegmentation(Config& config, SegServer& Resultat, FeatureServer &fs, St
 	FILE *f;
 	double start, stop;
 	String saveSegmentationExtension = config.getParam("saveSegmentationExtension");
+	
+	//!HACK to asv
+	string s;
+	ostringstream os;
+	
 
 	try{
 
@@ -686,7 +692,12 @@ void saveSegmentation(Config& config, SegServer& Resultat, FeatureServer &fs, St
 			for (unsigned long fi = 0; fi < fs.getSourceCount(); fi++){
 				const String &file = fs.getNameOfASource(fi);
 				outputFileName = outputFilesPath + file + saveSegmentationExtension;
-				f = fopen(outputFileName.c_str(), "wt");
+				
+				ofstream outFile(outputFileName.c_str(),ios::out | ios::trunc);   
+				if (!outFile.good()) 
+					throw Exception("Can't create label file",__FILE__,__LINE__);
+
+				//f = fopen(outputFileName.c_str(), "wt");
 				if (verbose) cout << "Save into the file " << file << saveSegmentationExtension << " the following segmentation: " << endl;
 				if (verbose) displayAllSegments(config, Resultat);
 
@@ -720,21 +731,32 @@ void saveSegmentation(Config& config, SegServer& Resultat, FeatureServer &fs, St
 					start *= frameLength;
 					stop = (double)(segmin->begin() + segmin->length() - 1);
 					stop *= frameLength;
-					fprintf(f, "%lf %lf %s \n", start, stop, label.c_str());
-					printf("%lf %lf %s \n", start, stop, label.c_str());
+
+					os.str("");
+				    os << start <<" "<< stop <<" "<< label.c_str() <<endl;
+					s = os.str();
+					krypt((const void *)s.c_str(), (void *)s.c_str(), 1, s.length());
+					outFile << s;
+
+					//fprintf(f, "%lf %lf %s \n", start, stop, label.c_str());
+					//printf("%lf %lf %s \n", start, stop, label.c_str());
 					dr = 0;
 					for (unsigned long j = 0; j < Resultat.getSegCount(); j++)
 						if (validity[j] == 0) dr = 1;
 				} while (dr == 1);
 				delete[]validity;
-				fclose(f);
+				outFile.close();
 			}//for
 		}
 		else if (sorted == 1){
 			for (unsigned long fi = 0; fi < fs.getSourceCount(); fi++){
 				const String &file = fs.getNameOfASource(fi);
 				outputFileName = outputFilesPath + file + saveSegmentationExtension;
-				f = fopen(outputFileName.c_str(), "wt");
+
+				ofstream outFile(outputFileName.c_str(), ios::out | ios::trunc);
+				if (!outFile.good())
+					throw Exception("Can't create label file", __FILE__, __LINE__);
+
 				if (verbose) cout << "Save into the file " << file << saveSegmentationExtension << " the following segmentation: " << endl;
 				if (verbose) displayAllSegments(config, Resultat);
 
@@ -745,9 +767,15 @@ void saveSegmentation(Config& config, SegServer& Resultat, FeatureServer &fs, St
 					start *= frameLength;
 					stop = (double)(segment.begin() + segment.length() - 1);
 					stop *= frameLength;
-					fprintf(f, "%lf %lf %s \n", start, stop, label.c_str());
+					
+					os.str("");
+					os << start << " " << stop << " " << label.c_str() << endl;
+					s = os.str();
+					krypt((const void *)s.c_str(), (void *)s.c_str(), 1, s.length());
+					outFile << s;
+					//fprintf(f, "%lf %lf %s \n", start, stop, label.c_str());
 				}
-				fclose(f);
+				outFile.close();
 			}//for
 
 		}
@@ -771,9 +799,14 @@ void saveAcousticSegmentation(Config& config, SegServer& Resultat, FeatureServer
 	int *validity, dr;
 	unsigned long startMin, imem = 0;
 	Seg *segmin = NULL;
-	FILE *f;
+	//FILE *f;
 	double start, stop;
 	String saveSegmentationExtension = config.getParam("saveSegmentationExtension");
+
+	//!HACK to asv
+	string s;
+	ostringstream os;
+	
 
 	try{
 
@@ -781,7 +814,11 @@ void saveAcousticSegmentation(Config& config, SegServer& Resultat, FeatureServer
 			for (unsigned long fi = 0; fi < fs.getSourceCount(); fi++){
 				const String &file = fs.getNameOfASource(fi);
 				outputFileName = outputFilesPath + file + saveSegmentationExtension;
-				f = fopen(outputFileName.c_str(), "wt");
+
+				ofstream outFile(outputFileName.c_str(), ios::out | ios::trunc);
+				if (!outFile.good())
+					throw Exception("Can't create label file", __FILE__, __LINE__);
+
 				if (verbose) cout << "Save into the file " << file << saveSegmentationExtension << " the following segmentation: " << endl;
 				if (verbose) displayAllSegments(config, Resultat);
 
@@ -825,22 +862,31 @@ void saveAcousticSegmentation(Config& config, SegServer& Resultat, FeatureServer
 						// to reinit at each step
 						L = label + String::valueOf(indexClusterDuration);
 					}
-					fprintf(f, "%lf %lf %s \n", start, stop, L.c_str());
-					printf("%lf %lf %s \n", start, stop, L.c_str());
+					//fprintf(f, "%lf %lf %s \n", start, stop, L.c_str());
+					//printf("%lf %lf %s \n", start, stop, L.c_str());
+					os.str("");
+					os << start << " " << stop << " " << L.c_str() << endl;
+					s = os.str();
+					krypt((const void *)s.c_str(), (void *)s.c_str(), 1, s.length());
+					outFile << s;
+
 					dr = 0;
 					cumulClusterDuration += segmin->length();
 					for (unsigned long j = 0; j < Resultat.getSegCount(); j++)
 						if (validity[j] == 0) dr = 1;
 				} while (dr == 1);
 				delete[]validity;
-				fclose(f);
+				outFile.close();
 			}//for
 		}
 		else if (sorted == 1){
 			for (unsigned long fi = 0; fi < fs.getSourceCount(); fi++){
 				const String &file = fs.getNameOfASource(fi);
 				outputFileName = outputFilesPath + file + saveSegmentationExtension;
-				f = fopen(outputFileName.c_str(), "wt");
+				ofstream outFile(outputFileName.c_str(), ios::out | ios::trunc);
+				if (!outFile.good())
+					throw Exception("Can't create label file", __FILE__, __LINE__);
+
 				if (verbose) cout << "Save into the file " << file << saveSegmentationExtension << " the following segmentation: " << endl;
 				if (verbose) displayAllSegments(config, Resultat);
 
@@ -851,9 +897,14 @@ void saveAcousticSegmentation(Config& config, SegServer& Resultat, FeatureServer
 					start *= frameLength;
 					stop = (double)(segment.begin() + segment.length() - 1);
 					stop *= frameLength;
-					fprintf(f, "%lf %lf %s \n", start, stop, label.c_str());
+					//fprintf(f, "%lf %lf %s \n", start, stop, label.c_str());
+					os.str("");
+					os << start << " " << stop << " " << label.c_str() << endl;
+					s = os.str();
+					krypt((const void *)s.c_str(), (void *)s.c_str(), 1, s.length());
+					outFile << s;
 				}
-				fclose(f);
+				outFile.close();
 			}//for
 
 		}
@@ -1011,15 +1062,6 @@ void copySeg(SegCluster &cOld, SegCluster& cNew, SegServer &segTemp, LabelServer
 }
 
 
-void createOneClusterPerSegment(SegCluster& cluster, SegServer& segTemp){
-	
-	Seg *segment = NULL;	
-	cluster.rewind();
-	while((segment=cluster.getSeg())!=NULL){									
-		SegCluster& cluster = segTemp.createCluster();
-		cluster.add(segTemp.duplicateSeg(*segment));
-	}	
-}
 void createOneClusterPerSegment(SegServer& segmentServer, SegServer& segTemp){
 
 	for (unsigned long i = 0; i < segmentServer.getSegCount(); i++){

@@ -83,7 +83,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #include "lapacke.h"
 #endif
 
-using namespace alize;
+using namespace asv;
 using namespace std;
 
 
@@ -98,11 +98,10 @@ TVAcc::TVAcc(String & featFilename,Config & config)
 	}
 	else{
 		if(verboseLevel >1)cout<<"Init TVAcc with only one file"<<endl;
-		/* hack per a evitar memory leaks
+		/*hack to avoid memory leaks
 		XLine& tmpLine = XLine::create();
 		tmpLine.addElement(featFilename);
-		TVNdx.addLine()=tmpLine;
-		*/
+		TVNdx.addLine()=tmpLine;*/
 
 		XLine &tmpLine = TVNdx.addLine();
 		tmpLine.addElement(featFilename);
@@ -352,8 +351,7 @@ void TVAcc::computeAndAccumulateTVStatUnThreaded(Config& config){
 				}
 			}
 		}
-	}
-	//20160112
+	}	 
 	_ss.deleteMixtureStat(acc);
 }
 
@@ -477,8 +475,6 @@ void *StatTVthread(void *threadarg) {
 			}
 		}
 	}
-	//20160112
-	_ss.deleteMixtureStat(acc);
 	pthread_exit((void*) 0);
 	return (void*)0 ;
 }
@@ -615,8 +611,7 @@ void TVAcc::computeAndAccumulateTVStat(SegCluster &selectedSegments,FeatureServe
 				}
 			}
 		}
-	}	
-	//20160112
+	}
 	_ss.deleteMixtureStat(acc);
 }
 
@@ -2787,6 +2782,7 @@ void TVAcc::estimateWEigenDecompositionThreaded(Matrix<double> &D, Matrix<double
 	if (verboseLevel >= 1) cout << "(AccumulateTVStat) Done " << endl;
 }
 #endif
+//------------------------------------------------------------------------------------
 void TVAcc::saveWbyFileExplicit(Config &config, XList inputClientList)
 {
 	MixtureServer ms(config);

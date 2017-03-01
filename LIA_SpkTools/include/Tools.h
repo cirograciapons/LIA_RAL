@@ -55,6 +55,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #if !defined(ALIZE_Tools_h)
 #define ALIZE_Tools_h
 
+/*
 #if defined(_WIN32)
 #if defined(LIA_SPKTOOLS_EXPORTS)
 #define LIA_SPKTOOLS_API __declspec(dllexport)
@@ -65,11 +66,12 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #define LIA_SPKTOOLS_API
 #endif
 
+*/
 #include <alize.h>
 #include "liatools.h"
 #include "ClusteringCriterion.h"
 
-using namespace alize;
+using namespace asv;
 using namespace std;
 
 
@@ -147,7 +149,13 @@ LIA_SPKTOOLS_API double meanLikelihoodExt(StatServer &, FeatureServer &, Mixture
 LIA_SPKTOOLS_API void accumulateStatLLKExt(StatServer &, FeatureServer &, MixtureStat &, unsigned long, unsigned long, Config &);
 
 LIA_SPKTOOLS_API void viterbiDecoding(Config &, hmm &, SegCluster &, SegServer &, StatServer &, FeatureServer &, LabelServer &, DoubleVector &);
+LIA_SPKTOOLS_API void viterbiDecodingNoSegmental(Config &, hmm &, SegCluster &, SegServer &, StatServer &, FeatureServer &, LabelServer &, DoubleVector 
+&);
+LIA_SPKTOOLS_API void viterbiDecodingNoSegmentalOptimal(Config &, hmm &, SegCluster &, SegServer &, StatServer &, FeatureServer &, LabelServer &, DoubleVector &);
+
 LIA_SPKTOOLS_API void copyPathInCluster(Config &, SegServer &, const ULongVector &, hmm &, LabelServer &, unsigned long, String);
+LIA_SPKTOOLS_API void copyPathInCluster(Config& , SegServer &, const ULongVector &, unsigned long , hmm &, LabelServer &, unsigned long , String);
+LIA_SPKTOOLS_API void copyPathInCluster(Config& , SegServer &, const ULongVector &, unsigned long , unsigned long , hmm &, LabelServer &, unsigned long , String);
 
 LIA_SPKTOOLS_API void segAdaptation(Config &, MAPCfg &, hmm &, MixtureGD &, SegServer &, SegServer &, StatServer &, FeatureServer &, MixtureServer &);
 LIA_SPKTOOLS_API void segEM(Config &, hmm &, SegServer &, SegServer &, StatServer &, FeatureServer &, MixtureServer &, unsigned long);

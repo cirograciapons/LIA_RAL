@@ -62,7 +62,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #include<cassert>
 #include<cmath>
 
-using namespace alize;
+using namespace asv;
 using namespace std;
 
 // comments in .h
@@ -161,12 +161,12 @@ void computeNAPChannelEffect(MixtureGD &T,MixtureGD &M,Matrix<double>&U) {
 		angle+=t[i]*m[i];
 	if (verboseLevel > 1) cout << "# <t,m>/||t||2=" << angle/normT << endl;
 	for (unsigned long i=0;i<t.size();i++) // norm du test
-		proj[i]=(angle/normT)*t[i];	
+		proj[i]=(angle/normT)*t[i];			// proyecta t hacia m;
 	projectOnSubSpace(m,U,tmp); // Channel effect for test
 	RealVector <double> mNap=m;
-	mNap-=tmp;	
+	mNap-=tmp;	 //mNAP = m-channel(m)
 	projectOnSubSpace(proj,U,channel);
-	channel+=mNap;
+	channel+=mNap; // mNap = m-channel(m) + channel(proj) ?  porque no = m-channel(m) + channel(t)
 	if (debug) {
 		double n=0.0;
 		double a=0.0;	

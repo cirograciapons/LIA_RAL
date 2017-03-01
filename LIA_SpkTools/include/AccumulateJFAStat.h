@@ -57,9 +57,9 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 
 #if defined(_WIN32)
 #if defined(LIA_SPKTOOLS_EXPORTS)
-#define LIA_SPKTOOLS_API __declspec(dllexport)
+#define LIA_SPKTOOLS_API 
 #else
-#define LIA_SPKTOOLS_API __declspec(dllimport)
+#define LIA_SPKTOOLS_API 
 #endif
 #else
 #define LIA_SPKTOOLS_API
@@ -861,7 +861,7 @@ class LIA_SPKTOOLS_API JFAAcc{
 		/// @param featureServer feature server to use
 		/// @param config config filename
 		///
-		void normalizeFeatures(alize::SegCluster& segCluster, alize::FeatureServer& featureServer, alize::Config& config);
+		void normalizeFeatures(asv::SegCluster& segCluster, asv::FeatureServer& featureServer, asv::Config& config);
 
 		/// Substract the Channel component from the features
 		/// @param fs feature Server to use

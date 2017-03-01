@@ -58,7 +58,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #include <alize.h>
 #include "Hmm.h"
 
-using namespace alize;
+using namespace asv;
 using namespace std;
 	
 // Class hmm

@@ -57,9 +57,9 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 
 #if defined(_WIN32)
 #if defined(LIA_SPKTOOLS_EXPORTS)
-#define LIA_SPKTOOLS_API __declspec(dllexport)
+#define LIA_SPKTOOLS_API 
 #else
-#define LIA_SPKTOOLS_API __declspec(dllimport)
+#define LIA_SPKTOOLS_API 
 #endif
 #else
 #define LIA_SPKTOOLS_API
@@ -71,7 +71,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #include "alizeString.h"
 #include "alize.h"
 
-namespace alize
+namespace asv
 {
 
 
@@ -112,6 +112,6 @@ namespace alize
 
   };
 
-}				// end namespace alize
+}				// end namespace asv
 
 #endif				// !defined(ALIZE_FileWriter_h)

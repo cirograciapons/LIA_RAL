@@ -82,7 +82,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #include "lapacke.h"
 #endif
 
-using namespace alize;
+using namespace asv;
 using namespace std;
 
 
@@ -2038,6 +2038,13 @@ PldaModel::PldaModel(String mode, Config &config){
 		initTest(config);
 	}
 }
+PldaModel::PldaModel(XList& ndx, Config &config){
+
+	//Read the NDX file
+		PldaDev dev(ndx, config);
+		initTrain(dev, config);	
+}
+
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------
 void PldaModel::initTrain(PldaDev dev,Config &config){
@@ -3467,6 +3474,194 @@ void PldaTest::load(Config &config){
 	else{ //load existing testList 
 		String ndxTrialsFilename = config.getParam("ndxFilename");
 		testList.load(ndxTrialsFilename,config);
+	}
+
+	String targetIdList;
+	if(config.existsParam("targetIdList")&&(config.getParam("targetIdList")!= "")){
+		existIdList = true;
+		targetIdList = config.getParam("targetIdList");
+	}
+
+	XLine *linep;
+
+	if(existIdList){
+
+		// Create the XList for model definition
+		enrollList.reset();
+		enrollList.load(targetIdList,config);
+
+		// Sort XList
+		enrollList.sortByElementNumber("descend");
+
+		// Read targetIdList and fill _modelIDLine and _modelSessionslLine
+		enrollList.getLine(0);
+		linep=enrollList.getLine();
+		String model, enrollSession;
+
+		// Get the maximum number of sessions per speaker
+		_n_enrollSessions_max = linep->getElementCount()-1;
+		enrollList.getLine(0);
+		while ((linep=enrollList.getLine()) != NULL){
+
+			model = linep->getElement(0);
+			if(_modelIDLine.getIndex(model) == -1){	//add the model ID to the list if it doesn't exists
+				_modelIDLine.addElement(model);
+			}
+
+			unsigned long e = 1;
+			while(e<linep->getElementCount()){
+				enrollSession = linep->getElement(e);
+				_modelIndexLine.addElement(model);
+				_modelSessionslLine.addElement(enrollSession);
+				e++;
+			}
+		}
+	}
+	else{
+		// Get the maximum number of sessions per speaker
+		_n_enrollSessions_max = 1;
+	}
+
+	if(!config.existsParam("inputVectorFilename")){
+		// Read the XList and fill the XLines when required
+		testList.getLine(0);
+		String vect;
+		while ((linep=testList.getLine()) != NULL){
+
+			vect = linep->getElement(0);
+			if(_segLine.getIndex(vect) == -1){
+				_segLine.addElement(vect);
+			}
+
+			// Verify that all models involved in the testing have enrollment data
+			unsigned long e = 1;
+			while(e<linep->getElementCount()){
+				vect = linep->getElement(e);
+				if(_modelIDLine.getIndex(vect) == -1){
+					if(existIdList){
+						cout<<"	WARNING: model "<<vect<<"	has no enrollment session"<<endl;
+					}
+					else{
+						_modelIDLine.addElement(vect);
+						_modelIndexLine.addElement(vect);
+						_modelSessionslLine.addElement(vect);
+					}
+				}
+				e++;
+			}
+		}
+	}
+	_n_models				= _modelIDLine.getElementCount();
+	_n_enrollment_segments	= _modelSessionslLine.getElementCount();
+	_n_test_segments		= _segLine.getElementCount();
+
+
+	// Get _vectSize from the first model
+	String tmp = _modelSessionslLine.getElement(0);
+	String fName = config.getParam("testVectorFilesPath") + "/" + tmp + config.getParam("loadVectorFilesExtension");
+	Matrix<double> tmpVect(fName,config);
+	_vectSize = tmpVect.cols();
+
+	_models.setDimensions(_vectSize,_n_enrollment_segments);
+	_segments.setDimensions(_vectSize,_n_test_segments);
+
+	if(verboseLevel>0){
+		cout<<"(PldaTest) found: "<<_n_models<<" models and "<<_n_test_segments<<" test segments"<<endl;
+		cout<<"(PldaTest) Maximum number of sessions per speaker = "<<_n_enrollSessions_max<<endl;
+	}
+
+	// Load model enrollment vectors
+	String fileName;
+	for(unsigned long m=0;m<_n_enrollment_segments;m++){
+		// Read the vector from file
+		fileName = _modelSessionslLine.getElement(m);
+		String fName = config.getParam("testVectorFilesPath") + "/" + fileName + config.getParam("loadVectorFilesExtension");
+		Matrix<double> tmpVect(fName,config);
+
+		for(unsigned long k=0;k<_vectSize;k++){
+			_models(k,m) = tmpVect(0,k);
+		}
+	}
+
+	// Load segment vectors
+	for(unsigned long s=0;s<_n_test_segments;s++){
+		// Read the vector from file
+		fileName = _segLine.getElement(s);
+		String fName = config.getParam("testVectorFilesPath") + "/" + fileName + config.getParam("loadVectorFilesExtension");
+		Matrix<double> tmpVect(fName,config);
+		for(unsigned long k=0;k<_vectSize;k++){
+			_segments(k,s) = tmpVect(0,k);
+		}
+	}
+
+	// Initialize Score matrix with the correct dimensions
+	_trials.setDimensions(_n_models,_n_test_segments);
+	_trials.setAllValues(false);
+
+	// Initialize Score matrix with the correct dimensions
+	_scores.setDimensions(_n_models,_n_test_segments);
+	_scores.setAllValues(0.0);
+
+	//Initialize and fill _trials matrix
+	_trials.setDimensions(_n_models,_n_test_segments);
+	
+	if(config.existsParam("inputVectorFilename")){
+		_trials.setAllValues(true);
+	}
+	else{
+		_trials.setAllValues(false);
+		testList.getLine(0);
+		String vect;
+		while ((linep=testList.getLine()) != NULL){
+			
+			vect = linep->getElement(0);
+			unsigned long segIdx = (unsigned long)_segLine.getIndex(vect);
+
+			unsigned long e = 1;
+			while(e<linep->getElementCount()){
+				vect = linep->getElement(e);
+				unsigned long modelIdx = (unsigned long)_modelIDLine.getIndex(vect);
+				_trials(modelIdx,segIdx) = true; 
+				e++;
+			}
+		}
+	}
+}
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------
+void PldaTest::load(XList &iTestList, Config &config){
+
+	bool existIdList = false;
+
+	// Create the XList for trials
+	XList testList;
+	XList enrollList;
+	_segLine.reset();
+	_modelIDLine.reset();
+	_modelIndexLine.reset();
+	_modelSessionslLine.reset();
+
+	//Load from one only file list
+	if(config.existsParam("inputVectorFilename")){
+
+		config.setParam("testVectorFilesPath",config.getParam("loadVectorFilesPath"));
+
+		String ndxTrialsFilename = config.getParam("inputVectorFilename");
+		testList.load(ndxTrialsFilename,config);
+
+		//Initialize enrollList with all files (by copying testList data)
+		_modelIDLine = testList.getAllElements();
+		_modelIndexLine = testList.getAllElements();
+		_modelSessionslLine = testList.getAllElements();
+		_n_enrollSessions_max = 1;
+
+		//Initialize the _segLine with all segments from testList
+		_segLine = testList.getAllElements();
+
+	}
+	else{ //load existing testList 
+		//String ndxTrialsFilename = config.getParam("ndxFilename");
+		//testList.load(ndxTrialsFilename,config);
+		testList = iTestList;
 	}
 
 	String targetIdList;

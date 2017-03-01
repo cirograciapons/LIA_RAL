@@ -51,9 +51,6 @@ Laboratoire d'informatique d'Avignon [http://lia.univ-avignon.fr]
 LIA_RAL admin [alize@univ-avignon.fr]
 Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 */
-#if !defined(ALIZE_ClusteringCriterion_cpp)
-#define ALIZE_ClusteringCriterion_cpp
-
 
 #include<iostream>
 #include<fstream>
@@ -63,8 +60,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #include "TrainTools.h"
 #include "SegTools.h"
 
-
-using namespace alize;
+using namespace asv;
 using namespace std;
 
 
@@ -929,4 +925,3 @@ else{
 
 return -1;
 }
-#endif

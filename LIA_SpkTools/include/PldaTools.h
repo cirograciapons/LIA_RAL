@@ -57,16 +57,39 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 
 #if defined(_WIN32)
 #if defined(LIA_SPKTOOLS_EXPORTS)
-#define LIA_SPKTOOLS_API __declspec(dllexport)
+#define LIA_SPKTOOLS_API 
 #else
-#define LIA_SPKTOOLS_API __declspec(dllimport)
+#define LIA_SPKTOOLS_API 
 #endif
 #else
 #define LIA_SPKTOOLS_API
 #endif
 
 #include <alize.h>
-#include "liatools.h"
+//#include "liatools.h"
+//HACK: 
+#include <Dense>
+#include <Cholesky>
+#include <src/Eigenvalues/EigenSolver.h>
+#include <Eigenvalues>
+#include "GeneralTools.h"
+#include "AccumulateStat.h"
+#include "AccumulateJFAStat.h"
+#include "AccumulateTVStat.h"
+#include "TrainTools.h"
+#include "SegTools.h"
+#include "Hmm.h"
+#include "ScoreWarp.h"
+#include "IOFormat.h"
+#include "SuperVectors.h"
+#include "FactorAnalysis.h"
+#include "TopGauss.h"
+
+extern LIA_SPKTOOLS_API bool debug;
+extern LIA_SPKTOOLS_API bool verbose;
+extern LIA_SPKTOOLS_API long verboseLevel;
+
+//
 #include <Core>
 
   /// This class represents a accumulator of statistics. 
@@ -426,6 +449,9 @@ class LIA_SPKTOOLS_API PldaModel{
 		PldaModel(String mode, Config &config);	
 		// le PldaModel peut etre initialise de 2 facons differentes (train et test)
 
+		PldaModel(XList& ndx, Config &config);
+		// le PldaModel pour train avec ndx initialisation
+
 		void initTrain(PldaDev, Config &);
 		// initialise l'objet avec les accumulateurs de statistiques
 		// recupere les donnees de dev qui ont eventuellement deja ete traitees en parallele de donnees de test
@@ -589,6 +615,11 @@ class LIA_SPKTOOLS_API PldaTest{
 		/// @param config the configuration
 		///
 		void load(Config &);
+		/// Load PldaTest data avoid using ndxFilename param 
+		/// @param iTestList the list corresponding to ndxFilename
+		/// @param config the configuration
+		///
+		void load(XList &iTestList, Config &config); 
 
 		void splitPerModel(unsigned long nbThread, RealVector<unsigned long> &startIndex, RealVector<unsigned long> &startModel);
 

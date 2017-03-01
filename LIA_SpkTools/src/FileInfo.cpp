@@ -62,7 +62,7 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #include "FileInfo.h"
 #include "Exception.h"
 
-using namespace alize;
+using namespace asv;
 
 //-------------------------------------------------------------------------
 FileInfo::FileInfo(const FileName & f):Object(), _pFileStruct(NULL),

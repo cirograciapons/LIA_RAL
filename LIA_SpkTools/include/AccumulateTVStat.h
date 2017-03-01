@@ -57,9 +57,9 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 
 #if defined(_WIN32)
 #if defined(LIA_SPKTOOLS_EXPORTS)
-#define LIA_SPKTOOLS_API __declspec(dllexport)
+#define LIA_SPKTOOLS_API 
 #else
-#define LIA_SPKTOOLS_API __declspec(dllimport)
+#define LIA_SPKTOOLS_API 
 #endif
 #else
 #define LIA_SPKTOOLS_API
@@ -342,11 +342,6 @@ class LIA_SPKTOOLS_API TVAcc{
 		///
 		void saveT(const String& file, Config& config);
 	
-		/// Save speakermodel M = ubm + Ty to a gmm file
-		/// @param config config filename
-		///
-		void saveWbyFileExplicit(Config &config, XList inputClientList);
-
 		/// Compute the VEVt matrices
 		/// @param config config filename
 		///
@@ -603,6 +598,11 @@ class LIA_SPKTOOLS_API TVAcc{
 		/// @param config config filename
 		///
 		void saveWbyFile(Config &config);
+		
+		/// Save i-vector to a file
+		/// @param config config filename
+		///
+		void saveWbyFileExplicit(Config &config, XList inputClientList);
 
 		/// Compute Weighted covariance matrix from the TotalVariability matrix
 		/// @param W the output weighted covariance matrix

@@ -61,8 +61,9 @@ Jean-Francois Bonastre [jean-francois.bonastre@univ-avignon.fr]
 #include<cstdio>
 #include<cassert>
 #include<cmath>
+#include "kryptlib.h"
 
-using namespace alize;
+using namespace asv;
 using namespace std;
 
 
@@ -72,6 +73,7 @@ void showCluster(SegCluster& cluster){
 	Seg *seg;
 	while ((seg = cluster.getSeg()) != NULL)
 		cout << "Seg File[" << seg->sourceName() << "][" << seg->begin() << "," << seg->length() << "]" << "[" << seg->string() << "]" << endl;
+		//cout<<"Seg File["<<seg->sourceName()<<"]["<<seg->begin()<<","<<seg->length()<<"]"<<endl;
 }
 // return the number of frame in the cluster
 unsigned long totalFrame(SegCluster& cluster)
@@ -103,21 +105,33 @@ unsigned long endSeg(Seg *seg)
 //
 //------------------------------------------------------------------------------------------------------------------------------
 // Output a cluster in a  label file
-void outputLabelFile(SegCluster &selectedSeg, String FileName, Config &config)
+void outputLabelFile(SegCluster &selectedSeg,String FileName,Config &config)
 {
-	ofstream outFile(FileName.c_str(), ios::out | ios::trunc);                      // Initialise the output file
-	if (!outFile.good())
-		throw Exception("Can't create label file", __FILE__, __LINE__);
-	real_t frameLength = config.getParam("frameLength").toDouble();
-	selectedSeg.rewind();                                                      // Reset the cluster of selected segments
-	Seg * seg;
-	while ((seg = selectedSeg.getSeg()) != NULL){                                       // For all the segments
-		outFile << frameIdxToTime(seg->begin(), frameLength) << " " << frameIdxToTime(seg->begin() + seg->length() - 1, frameLength) << " " << seg->string() << endl;
-		if (debug)cout << frameIdxToTime(seg->begin(), frameLength) << " " << frameIdxToTime(seg->begin() + seg->length() - 1, frameLength) << " " << seg->string() << endl;
-	}
+  // HACK: krypt to asv
+  string s;
+  ostringstream os;
+  
+
+  ofstream outFile(FileName.c_str(),ios::out | ios::trunc);                      // Initialise the output file
+  if (!outFile.good()) 
+	  throw Exception("Can't create label file",__FILE__,__LINE__);
+  real_t frameLength=config.getParam("frameLength").toDouble();
+  selectedSeg.rewind();                                                      // Reset the cluster of selected segments
+  Seg * seg;
+
+  while((seg=selectedSeg.getSeg())!=NULL){                                       // For all the segments
+	// HACK: krypt to asv
+	os.str("");
+    os <<frameIdxToTime(seg->begin(),frameLength)<<" "<<frameIdxToTime(seg->begin()+seg->length()-1,frameLength)<<" "<<seg->string()<<endl;
+	s = os.str();
+	krypt((const void *)s.c_str(), (void *)s.c_str(), 1, s.length());
+	outFile << s;
+    
+	//outFile <<frameIdxToTime(seg->begin(),frameLength)<<" "<<frameIdxToTime(seg->begin()+seg->length()-1,frameLength)<<" "<<seg->string()<<endl;
+    if (debug)cout <<frameIdxToTime(seg->begin(),frameLength)<<" "<<frameIdxToTime(seg->begin()+seg->length()-1,frameLength)<<" "<<seg->string()<<endl;
+  }
+  outFile.close();
 }
-
-
 
 //******* Create a default cluster with the label labelToAnalyse, including all the input file frames
 //** From N Scheffer & JFB
@@ -170,6 +184,15 @@ void verifyClusterFile(SegServer& segmentsServer, FeatureServer& fs, Config& con
 			seg->setLength(newLength);
 			}
 		}
+/*	ORIGINAL CODE: REPLACE TO AVOID HUGE LATER PROBLEMS WHEN SEGMENTATION GOES TOO OUT OF FEATFILE
+			while ((seg = cluster.getSeg()) != NULL)                                                       // For each segment
+			if ((seg->begin() + seg->length()) > fs.getFeatureCountOfASource(seg->sourceName())){ // The end of the segment is after the last frame
+				unsigned long newLength = fs.getFeatureCountOfASource(seg->sourceName()) - seg->begin();
+				if (debug || verbose)cout << "Warning File[" << seg->sourceName() << "], Truncate Segment begin:" << seg->begin() << " length:" << seg->length() <<
+					" file size:" << fs.getFeatureCountOfASource(seg->sourceName()) << " new length:" << newLength << endl;
+				seg->setLength(newLength);
+			}
+*/
 	} //End cluster loop
 }
 
@@ -179,7 +202,7 @@ void verifyClusterFile(SegServer& segmentsServer, FeatureServer& fs, Config& con
 //* Dan Istrate, JFB,  november 2004
 //***************************************
 
-//!CIRO : no entiendo porque simplemente no es codeLabel en lugar de labelServer.addLabel(labelTemp) en las llamada createSeg
+
 // Add a segment to the server, in an existing cluster - same name or in a new cluster - new name
 void addSegment(const Config & config,
 	const String &file, const String &name, unsigned long segFrameBegin, unsigned long segFrameLength,
@@ -220,79 +243,86 @@ void  loadLabelFile(SegCluster &cluster, String fileName, String path, String ex
 
 
 // the main function for loading the labels - do the job for a given file
-void loadClusterFile(String &fileName, SegServer& segmentsServer, LabelServer&
-	labelServer, Config& config)
+void loadClusterFile(String &fileName,SegServer& segmentsServer,LabelServer&
+labelServer,Config& config)
 {
-	String labelPath = "./";
-	if (config.existsParam("labelFilesPath")) labelPath = config.getParam("labelFilesPath");                     // The path of the lable files
-	String labelFileExtension = ".lbl";
-	if (config.existsParam("labelFilesExtension"))	 // The extension of the lable files
-		labelFileExtension = config.getParam("labelFilesExtension");
-	double frameLength = config.getParam("frameLength").toDouble();         // length in s of a frame
-	String inputLabelFormat = "LIARAL";
-	if (config.existsParam("inputLabelFormat"))                            // the label file format is decided by the user (not LIARAL std format)
-		inputLabelFormat = config.getParam("inputLabelFormat");
-	if (debug) cout << "(SegTools) The label format is " << inputLabelFormat << endl;
-	if (verboseLevel > 1)  cout << "(SegTools) >> Proceeding label file reading for [" << fileName << "] <<" << endl;
-	//  double tmpt;	
-	bool addDefault = false;
-	String defaultLabel;
-	if (config.existsParam("addDefaultLabel")){
+	//HACK: adaptation to asv
+   String labelPath="";
+  if (config.existsParam("labelFilesPath")) labelPath= config.getParam("labelFilesPath");                     // The path of the lable files
+  String labelFileExtension=".sfr";	
+  if(config.existsParam("labelFilesExtension"))	 // The extension of the lable files
+    labelFileExtension=config.getParam("labelFilesExtension");	 
+  double frameLength = config.getParam("frameLength").toDouble();         // length in s of a frame
+  String inputLabelFormat="LIARAL";
+  if (config.existsParam("inputLabelFormat"))                            // the label file format is decided by the user (not LIARAL std format)
+    inputLabelFormat=config.getParam("inputLabelFormat");             
+  if(debug) cout<<"(SegTools) The label format is "<<inputLabelFormat<<endl;
+  if (verboseLevel>1)  cout << "(SegTools) >> Proceeding label file reading for ["<<fileName<<"] <<"<<endl;
+  //  double tmpt;	
+  bool addDefault=false;
+  String defaultLabel;
+  /* OLD CODE: REPLACED 20161123 , to avoid errors in the 
+  if  (config.existsParam("addDefaultLabel")){
+    addDefault=true;
+    defaultLabel=config.getParam("defaultLabel");
+  }*/
+  if (config.existsParam("addDefaultLabel")){
 		if (config.getParam("addDefaultLabel").toBool()){
 			if (verboseLevel > 1)  cout << "(SegTools) >> Proceeding add a Default Label [" << fileName << "] <<" << endl;
 			addDefault = true;
 			defaultLabel = config.getParam("defaultLabel");
 		}
 	}
-	String fileLabel;
-	fileLabel = labelPath + fileName + labelFileExtension;         // build the complete filename - to be included in ALIZE default - TODO
+  String fileLabel;
+  fileLabel=labelPath+fileName+labelFileExtension;         // build the complete filename - to be included in ALIZE default - TODO
+  
 
-
-	XList labelSet;
-	bool noLabelFile = false;
-	try{
-		labelSet.load(fileLabel, config);                 // if the file exists, read it in a Xlist - one segment by line
-	}
-	catch (FileNotFoundException& e){
-		noLabelFile = true;
-	}
-	if ((noLabelFile) && (addDefault == false)){
-		cout << "(SegTools)  Error: For " << fileName << "[" << fileLabel << "]" << endl;
-		throw Exception("There is no correspondent label file", __FILE__, __LINE__);
-	}
-	if (noLabelFile){ // no label file and the default option is on - creating a default segment
-		FeatureServer fsFake(config, fileName);
-		unsigned long segFrameLength = fsFake.getFeatureCount();
-		unsigned long segFrameBegin = 0;
-		if (verbose) cout << "(SegTools) Default label file for [" << fileName << "], nb features[" << segFrameLength << "]" << endl;
-		addSegment(config, fileName, defaultLabel, segFrameBegin, segFrameLength, labelServer, segmentsServer);
-	}
-	else{ // a Label file is existing
-		bool visit = false;
-		XLine *segmentp;
-		while ((segmentp = labelSet.getLine()) != NULL){                             // Get the lines/segment one by one
-			visit = true;
-			if (inputLabelFormat == "LIARAL"){                                         // A line is composed by [begin_time end_time name]
-				const String& beginString = segmentp->getElement(0);                     // Get the Client ID (id)
-				const String& endString = segmentp->getElement(1);                       // Get the Client ID (id)
-				const String& name = segmentp->getElement(2);                            // Get the Client ID (id)
-				unsigned long segFrameBegin = timeToFrameIdx(beginString.toDouble(), frameLength); // begin in frame
-				unsigned long segFrameLength = timeToFrameIdx(endString.toDouble(), frameLength) - segFrameBegin + 1;
-				addSegment(config, fileName, name, segFrameBegin, segFrameLength, labelServer, segmentsServer);
-			}
-			else if (inputLabelFormat == "mdtm"){// mdtm format. An example[20030418_0700_0800_FRANCEINTER_DGA 1 0.000 5.928 speaker NA male Jean-Jacques_Bernard]
-				const String& name = segmentp->getElement(7);
-				const String& beginString = segmentp->getElement(2);
-				const String& lengthString = segmentp->getElement(3);
-				unsigned long segFrameBegin = timeToFrameIdx(beginString.toDouble(), frameLength);                               // begin in frame
-				unsigned long segFrameLength = timeToFrameIdx(lengthString.toDouble(), frameLength);                             // length in frame
-				addSegment(config, fileName, name, segFrameBegin, segFrameLength, labelServer, segmentsServer);
-			}
-			else cout << "label type[" << inputLabelFormat << "] unknown" << endl;
-		}
-		if (!visit) cout << "WARNING, label file [" << fileName << "] empty" << endl;
-	}
+  XList labelSet;
+  bool noLabelFile=false;
+  try{
+    labelSet.load(fileLabel,config);                 // if the file exists, read it in a Xlist - one segment by line
+  }
+  catch(FileNotFoundException& e){
+    noLabelFile=true;
+  }
+  if ((noLabelFile)&& (addDefault==false)){
+    cout<<"(SegTools)  Error: For "<< fileName << "["<<fileLabel<<"]"<<endl;
+    throw Exception("There is no correspondent label file",__FILE__,__LINE__);		
+  }
+  if (noLabelFile){ // no label file and the default option is on - creating a default segment
+    FeatureServer fsFake(config,fileName);
+    unsigned long segFrameLength=fsFake.getFeatureCount();
+    unsigned long segFrameBegin=0;   
+    if (verbose) cout << "(SegTools) Default label file for ["<<fileName<<"], nb features["<<segFrameLength<<"]"<<endl;
+    addSegment(config,fileName,defaultLabel,segFrameBegin,segFrameLength,labelServer,segmentsServer); 
+  } 
+  else{ // a Label file is existing
+    bool visit=false;
+    XLine *segmentp;
+    while ((segmentp=labelSet.getLine()) != NULL){                             // Get the lines/segment one by one
+      visit=true;
+      if (inputLabelFormat=="LIARAL"){                                         // A line is composed by [begin_time end_time name]
+	const String& beginString=segmentp->getElement(0);                     // Get the Client ID (id)
+	const String& endString=segmentp->getElement(1);                       // Get the Client ID (id)
+	const String& name=segmentp->getElement(2);                            // Get the Client ID (id)
+	unsigned long segFrameBegin=timeToFrameIdx(beginString.toDouble(),frameLength); // begin in frame
+	unsigned long segFrameLength=timeToFrameIdx(endString.toDouble(),frameLength)-segFrameBegin+1;
+	addSegment(config,fileName,name,segFrameBegin,segFrameLength,labelServer,segmentsServer); 
+      }
+      else if (inputLabelFormat=="mdtm"){// mdtm format. An example[20030418_0700_0800_FRANCEINTER_DGA 1 0.000 5.928 speaker NA male Jean-Jacques_Bernard]
+	const String& name=segmentp->getElement(7);  
+	const String& beginString=segmentp->getElement(2); 
+	const String& lengthString=segmentp->getElement(3);
+	unsigned long segFrameBegin=timeToFrameIdx(beginString.toDouble(),frameLength);                               // begin in frame
+	unsigned long segFrameLength=timeToFrameIdx(lengthString.toDouble(),frameLength);                             // length in frame
+	addSegment(config,fileName,name,segFrameBegin,segFrameLength,labelServer,segmentsServer); 	
+      }
+      else cout << "label type["<<inputLabelFormat<<"] unknown" <<endl;
+    }
+    if (!visit) cout <<"WARNING, label file ["<<fileName <<"] empty"<<endl;
+  }
 }
+
 
 
 // for a list of file
